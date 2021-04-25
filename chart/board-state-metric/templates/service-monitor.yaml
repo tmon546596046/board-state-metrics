@@ -1,0 +1,23 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    release: {{ $.Release.Name | quote }}
+{{ include "board-state-metric.labels" . | indent 4 }}
+  name: {{ include "board-state-metric.fullname" . }}
+spec:
+  endpoints:
+  - honorLabels: true
+    interval: {{ .Values.monitor.interval }}
+    port: main
+    scheme: http
+    scrapeTimeout: {{ .Values.monitor.timeout }}
+  - interval: {{ .Values.monitor.interval }}
+    port: self
+    scheme: http
+    scrapeTimeout: {{ .Values.monitor.timeout }}
+  jobLabel: {{ .Release.Name }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "board-state-metric.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}

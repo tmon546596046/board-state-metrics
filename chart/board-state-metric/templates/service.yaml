@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "board-state-metric.fullname" . }}
+  labels:
+{{ include "board-state-metric.labels" . | indent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.main.port }}
+      targetPort: main
+      protocol: TCP
+      name: main
+    - port: {{ .Values.service.self.port }}
+      targetPort: self
+      protocol: TCP
+      name: self
+  selector:
+    app.kubernetes.io/name: {{ include "board-state-metric.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}

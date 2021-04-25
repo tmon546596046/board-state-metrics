@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "board-state-metric.fullname" . }}
+  labels:
+{{ include "board-state-metric.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "board-state-metric.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "board-state-metric.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --host=0.0.0.0
+            - --port=8081
+            - --telemetry-host=0.0.0.0
+            - --telemetry-port=8082
+{{- if .Values.prometheus.url }}
+            - --prometheus={{ .Values.prometheus.url }}
+{{- else }}
+            - --prometheus=http://{{ include "upper-kube-prometheus-stack.fullname" . }}-prometheus:{{ .Values.prometheus.port }}
+{{- end }}
+          ports:
+            - name: main
+              containerPort: 8081
+              protocol: TCP
+            - name: self
+              containerPort: 8082
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      serviceAccountName: {{ include "board-state-metric.fullname" . }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
