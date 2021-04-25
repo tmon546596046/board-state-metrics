@@ -40,9 +40,9 @@ doccheck:
 gofmtcheck:
 	@go fmt $(PKGS) | grep ".*\.go"; if [ "$$?" = "0" ]; then exit 1; fi
 build: clean
-	GO111MODULE=on GOOS=$(shell uname -s | tr A-Z a-z) GOARCH=$(ARCH) CGO_ENABLED=0 go build -mod=vendor -ldflags "-s -w -X ${PKG}/version.Release=${TAG} -X ${PKG}/version.Commit=${Commit} -X ${PKG}/version.BuildDate=${BuildDate}" -o board-state-metrics
+	GO111MODULE=on GOOS=$(shell uname -s | tr A-Z a-z) GOPROXY=https://goproxy.cn GOARCH=$(ARCH) CGO_ENABLED=0 go build -mod=vendor -ldflags "-s -w -X ${PKG}/version.Release=${TAG} -X ${PKG}/version.Commit=${Commit} -X ${PKG}/version.BuildDate=${BuildDate}" -o board-state-metrics
 test-unit: clean build
-	GO111MODULE=on GOOS=$(shell uname -s | tr A-Z a-z) GOARCH=$(ARCH) $(TESTENVVAR) go test --race $(FLAGS) $(PKGS)
+	GO111MODULE=on GOOS=$(shell uname -s | tr A-Z a-z) GOPROXY=https://goproxy.cn GOARCH=$(ARCH) $(TESTENVVAR) go test --race $(FLAGS) $(PKGS)
 
 TEMP_DIR := $(shell mktemp -d)
 
@@ -60,7 +60,7 @@ all-push: $(addprefix sub-push-,$(ALL_ARCH))
 
 container: .container-$(ARCH)
 .container-$(ARCH):
-	docker run --rm -v "$$PWD":/go/src/github.com/tmon546596046/board-state-metrics -w /go/src/github.com/tmon546596046/board-state-metrics -e GO111MODULE=on  -e GOOS=linux -e GOARCH=$(ARCH) -e CGO_ENABLED=0 golang:${GO_VERSION} go build -ldflags "-s -w -X ${PKG}/version.Release=${TAG} -X ${PKG}/version.Commit=${Commit} -X ${PKG}/version.BuildDate=${BuildDate}" -o board-state-metrics
+	docker run --rm -v "$$PWD":/go/src/github.com/tmon546596046/board-state-metrics -w /go/src/github.com/tmon546596046/board-state-metrics -e GO111MODULE=on -e GOPROXY=https://goproxy.cn -e GOOS=linux -e GOARCH=$(ARCH) -e CGO_ENABLED=0 golang:${GO_VERSION} go build -ldflags "-s -w -X ${PKG}/version.Release=${TAG} -X ${PKG}/version.Commit=${Commit} -X ${PKG}/version.BuildDate=${BuildDate}" -o board-state-metrics
 	cp -r * $(TEMP_DIR)
 	docker build -t $(MULTI_ARCH_IMG):$(TAG) $(TEMP_DIR)
 	docker tag $(MULTI_ARCH_IMG):$(TAG) $(MULTI_ARCH_IMG):latest
