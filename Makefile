@@ -1,14 +1,14 @@
 FLAGS =
 TESTENVVAR =
-REGISTRY = tmon546596046
-TAG = $(shell git describe --abbrev=0)
+REGISTRY = piranhahu
+TAG = $(shell git describe --abbrev=0 || git rev-parse --short HEAD)
 PKGS = $(shell go list ./... | grep -v /vendor/)
 ARCH ?= $(shell go env GOARCH)
 BuildDate = $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 Commit = $(shell git rev-parse --short HEAD)
-ALL_ARCH = amd64 arm arm64 ppc64le s390x
+ALL_ARCH = amd64 
 PKG=github.com/tmon546596046/board-state-metrics/pkg
-GO_VERSION=1.11
+GO_VERSION=1.15.5
 JB_BINARY:=$(firstword $(subst :, ,$(GOPATH)))/bin/jb
 JSONNET_VENDOR=jsonnet/jsonnetfile.lock.json jsonnet/vendor
 JSONNET_SRC=$(shell find ./jsonnet -type f)
