@@ -102,10 +102,14 @@ func getSingleSampleValue(c context.Context, papi v1.API, psql string) (float64,
 		return 0, errors.New(fmt.Sprintf("Query prometheus metric %s type %s is not vector", psql, values.Type().String()))
 	}
 	vec := values.(model.Vector)
+	if len(vec) == 0 {
+		klog.Infof("Query prometheus metric %s has no result.", psql)
+		return 0, nil
+	}
 
-	if len(vec) != 1 {
+	if len(vec) > 1 {
 		for _, sample := range vec {
-			klog.Infof("Query prometheus metric result multi result: %+v", sample)
+			klog.Infof("Query prometheus metric %s result multi result: %+v", psql, sample)
 		}
 	}
 	return float64(vec[0].Value), nil
