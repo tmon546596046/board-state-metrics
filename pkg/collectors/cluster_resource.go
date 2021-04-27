@@ -3,6 +3,7 @@ package collectors
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -46,6 +47,18 @@ var (
 				return f
 			},
 		},
+		metric.FamilyGenerator{
+			Name: "board_cluster_info",
+			Type: metric.MetricTypeGauge,
+			Help: "Cluster Information",
+			GenerateFunc: func(obj interface{}) metric.Family {
+				c := obj.(*ClusterValue)
+				f := metric.Family{}
+				f.Metrics = append(f.Metrics, c.Info)
+
+				return f
+			},
+		},
 	}
 )
 
@@ -53,6 +66,7 @@ type ClusterValue struct {
 	metav1.ObjectMeta `json:"metadata" protobuf:"bytes,1,opt,name=metadata"`
 	CPU               *metric.Metric
 	Memory            *metric.Metric
+	Info              *metric.Metric
 }
 
 func getClusterResourceMetrics(c context.Context, apiserver string, kubeconfig string, namespaces []string, url string) []interface{} {
@@ -78,12 +92,20 @@ func getClusterResourceMetrics(c context.Context, apiserver string, kubeconfig s
 		Value: memory,
 	}
 
+	//cluster info metric
+	info := metric.Metric{
+		LabelKeys:   []string{"kind", "console"},
+		LabelValues: []string{os.Getenv("KIND"), os.Getenv("CONSOLE")},
+		Value:       1,
+	}
+
 	value := ClusterValue{
 		ObjectMeta: metav1.ObjectMeta{
 			UID: types.UID("cluster_utilization"),
 		},
 		CPU:    &cpumetric,
 		Memory: &memorymetric,
+		Info:   &info,
 	}
 	return []interface{}{&value}
 }
