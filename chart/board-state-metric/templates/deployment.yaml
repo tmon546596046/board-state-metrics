@@ -34,6 +34,11 @@ spec:
 {{- else }}
             - --prometheus=http://{{ include "upper-kube-prometheus-stack.fullname" . }}-prometheus:{{ .Values.prometheus.port }}
 {{- end }}
+          env:
+            - name: KIND
+              value: {{ .Values.env.kind }}
+            - name: CONSOLE
+              value: {{ .Values.env.console }}
           ports:
             - name: main
               containerPort: 8081

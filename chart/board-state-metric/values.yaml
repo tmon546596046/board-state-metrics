@@ -5,12 +5,16 @@
 replicaCount: 1
 image:
   repository: piranhahu/board-state-metrics
-  tag: "4b4e144"
+  tag: "504fd01"
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
+
+env:
+  kind: "0-1"
+  console: "http://localhost:8080"
 
 service:
   type: ClusterIP
