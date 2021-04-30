@@ -39,6 +39,8 @@ spec:
               value: {{ .Values.env.kind }}
             - name: CONSOLE
               value: {{ .Values.env.console }}
+            - name: VERSION
+              value: {{ .Values.env.version }}
           ports:
             - name: main
               containerPort: 8081

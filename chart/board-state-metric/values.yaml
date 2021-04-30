@@ -15,6 +15,7 @@ fullnameOverride: ""
 env:
   kind: "0-1"
   console: "http://localhost:8080"
+  version: "v1.0.0"
 
 service:
   type: ClusterIP

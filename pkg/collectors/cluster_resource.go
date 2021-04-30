@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	CLUSTER_CPU_UTILIZATION_PSQL    = `1-avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))`
-	CLUSTER_MEMORY_UTILIZATION_PSQL = `1 - sum(:node_memory_MemAvailable_bytes:sum{}) / sum(kube_node_status_allocatable_memory_bytes{})`
+	CLUSTER_CPU_UTILIZATION_PSQL     = `1-avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))`
+	CLUSTER_MEMORY_UTILIZATION_PSQL  = `1 - sum(:node_memory_MemAvailable_bytes:sum{}) / sum(kube_node_status_allocatable_memory_bytes{})`
+	CLUSTER_STORAGE_UTILIZATION_PSQL = `1 -(sum(node_filesystem_avail_bytes{job="node-exporter", fstype!="", device!=""})/sum(node_filesystem_size_bytes{job="node-exporter", fstype!="", device!=""}))`
 )
 
 var (
@@ -48,6 +49,18 @@ var (
 			},
 		},
 		metric.FamilyGenerator{
+			Name: "board_cluster_storage_utilization",
+			Type: metric.MetricTypeGauge,
+			Help: "Cluster Storage Utilization",
+			GenerateFunc: func(obj interface{}) metric.Family {
+				c := obj.(*ClusterValue)
+				f := metric.Family{}
+				f.Metrics = append(f.Metrics, c.Storage)
+
+				return f
+			},
+		},
+		metric.FamilyGenerator{
 			Name: "board_cluster_info",
 			Type: metric.MetricTypeGauge,
 			Help: "Cluster Information",
@@ -66,6 +79,7 @@ type ClusterValue struct {
 	metav1.ObjectMeta `json:"metadata" protobuf:"bytes,1,opt,name=metadata"`
 	CPU               *metric.Metric
 	Memory            *metric.Metric
+	Storage           *metric.Metric
 	Info              *metric.Metric
 }
 
@@ -92,10 +106,19 @@ func getClusterResourceMetrics(c context.Context, apiserver string, kubeconfig s
 		Value: memory,
 	}
 
+	//cluster storage metric
+	storage, err := getSingleSampleValue(c, papi, CLUSTER_STORAGE_UTILIZATION_PSQL)
+	if err != nil {
+		storage = 0
+	}
+	storagemetric := metric.Metric{
+		Value: storage,
+	}
+
 	//cluster info metric
 	info := metric.Metric{
-		LabelKeys:   []string{"kind", "console"},
-		LabelValues: []string{os.Getenv("KIND"), os.Getenv("CONSOLE")},
+		LabelKeys:   []string{"kind", "console", "version"},
+		LabelValues: []string{os.Getenv("KIND"), os.Getenv("CONSOLE"), os.Getenv("VERSION")},
 		Value:       1,
 	}
 
@@ -103,9 +126,10 @@ func getClusterResourceMetrics(c context.Context, apiserver string, kubeconfig s
 		ObjectMeta: metav1.ObjectMeta{
 			UID: types.UID("cluster_utilization"),
 		},
-		CPU:    &cpumetric,
-		Memory: &memorymetric,
-		Info:   &info,
+		CPU:     &cpumetric,
+		Memory:  &memorymetric,
+		Storage: &storagemetric,
+		Info:    &info,
 	}
 	return []interface{}{&value}
 }
